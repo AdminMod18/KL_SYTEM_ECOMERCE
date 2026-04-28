@@ -1,0 +1,17 @@
+server:
+  port: ${SERVER_PORT:9004}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+spring:
+  application:
+    name: validation-service
+
+# Opcional: sobrescribe la URL base del mock REST (por defecto http://127.0.0.1:${server.port})
+validation:
+  datacredito:
+    base-url:
