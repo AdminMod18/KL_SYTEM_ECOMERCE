@@ -1,0 +1,12 @@
+server:
+  port: ${SERVER_PORT:9008}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+spring:
+  application:
+    name: notification-service
