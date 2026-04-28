@@ -1,0 +1,4 @@
+# Propiedades compartidas de ejemplo servidas por Config Server (perfil native).
+marketplace:
+  entorno: demo
+  mensaje: "Configuración centralizada (native) activa."

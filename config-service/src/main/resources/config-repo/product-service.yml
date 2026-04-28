@@ -1,0 +1,7 @@
+# Ejemplo: overrides para product-service consumidos vía Config Server.
+server:
+  port: 9007
+
+marketplace:
+  productos:
+    cache-ttl-segundos: 120
