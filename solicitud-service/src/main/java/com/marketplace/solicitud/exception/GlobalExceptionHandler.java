@@ -3,6 +3,8 @@ package com.marketplace.solicitud.exception;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.validation.FieldError;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -21,6 +23,8 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     ProblemDetail handleValidation(MethodArgumentNotValidException ex) {
         ProblemDetail pd = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
@@ -32,6 +36,7 @@ public class GlobalExceptionHandler {
             fieldErrors.put(fe.getField(), fe.getDefaultMessage());
         }
         pd.setProperty("campos", fieldErrors);
+        log.warn("Body JSON rechazado (@Valid): {}", fieldErrors);
         return pd;
     }
 
@@ -54,6 +59,24 @@ public class GlobalExceptionHandler {
         ProblemDetail pd = ProblemDetail.forStatus(status);
         pd.setTitle(status.getReasonPhrase());
         pd.setDetail(ex.getReason());
+        pd.setProperty("timestamp", Instant.now().toString());
+        return pd;
+    }
+
+    /**
+     * Errores de integración con validation-service (HTTP, timeout, respuesta inválida).
+     */
+    @ExceptionHandler(IllegalStateException.class)
+    ProblemDetail handleIntegracionValidacion(IllegalStateException ex) {
+        HttpStatus status = HttpStatus.BAD_GATEWAY;
+        if (ex.getMessage() != null
+                && (ex.getMessage().contains("Configure integracion.validation.base-url")
+                        || ex.getMessage().contains("Configure integracion.payment.base-url"))) {
+            status = HttpStatus.SERVICE_UNAVAILABLE;
+        }
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(status, ex.getMessage());
+        pd.setTitle("Integración externa");
+        pd.setType(URI.create("about:blank"));
         pd.setProperty("timestamp", Instant.now().toString());
         return pd;
     }

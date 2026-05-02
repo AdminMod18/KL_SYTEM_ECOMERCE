@@ -19,4 +19,9 @@ public class CanceladaEstado extends AbstractEstadoSolicitud {
         super(SolicitudEstado.CANCELADA,
                 Collections.<SolicitudEstado>emptySet());
     }
+
+    @Override
+    public String descripcionFlujo() {
+        return "Cancelada: estado terminal; no admite nuevas transiciones de negocio.";
+    }
 }

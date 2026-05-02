@@ -22,7 +22,14 @@ public class DatacreditoMockRestController {
     @GetMapping("/{documento}")
     public DatacreditoMockPayload consultar(@PathVariable String documento) {
         boolean listaControl = documento.endsWith("999");
-        int score = listaControl ? 300 : 720;
+        int score;
+        if (listaControl) {
+            score = 300;
+        } else if (documento.endsWith("555")) {
+            score = 620;
+        } else {
+            score = 720;
+        }
         return new DatacreditoMockPayload(
                 documento,
                 score,

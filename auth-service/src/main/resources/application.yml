@@ -15,3 +15,11 @@ auth:
   jwt:
     secret: ${AUTH_JWT_SECRET:cambiar-en-produccion-minimo-32-bytes!!}
     expiration-ms: ${AUTH_JWT_EXPIRATION_MS:3600000}
+
+integration:
+  user-service:
+    base-url: ${USER_SERVICE_BASE_URL:}
+    internal-secret: ${USER_SERVICE_INTERNAL_SECRET:kl-dev-internal-secret-cambiar}
+  solicitud:
+    # Lectura GET /solicitudes/{id} para sincronizar rol VENDEDOR tras ACTIVA (Docker: http://solicitud-service:9003).
+    base-url: ${INTEGRACION_SOLICITUD_BASE_URL:}

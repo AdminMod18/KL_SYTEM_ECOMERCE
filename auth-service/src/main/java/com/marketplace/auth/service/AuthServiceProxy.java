@@ -3,6 +3,7 @@ package com.marketplace.auth.service;
 import com.marketplace.auth.dto.LoginRequest;
 import com.marketplace.auth.dto.LoginResponse;
 import com.marketplace.auth.dto.RolesResponse;
+import com.marketplace.auth.dto.SincronizarVendedorRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -43,5 +44,18 @@ public class AuthServiceProxy implements AuthService {
     public RolesResponse rolesDesdeAuthorization(String authorizationHeader) {
         log.info("[Proxy] Consulta de roles desde Authorization");
         return delegado.rolesDesdeAuthorization(authorizationHeader);
+    }
+
+    @Override
+    public LoginResponse refreshDesdeAuthorization(String authorizationHeader) {
+        log.info("[Proxy] Refresh de JWT desde Authorization");
+        return delegado.refreshDesdeAuthorization(authorizationHeader);
+    }
+
+    @Override
+    public LoginResponse sincronizarVendedorDesdeSolicitud(
+            String authorizationHeader, SincronizarVendedorRequest body) {
+        log.info("[Proxy] Sincronizar VENDEDOR desde solicitud id={}", body.getSolicitudId());
+        return delegado.sincronizarVendedorDesdeSolicitud(authorizationHeader, body);
     }
 }

@@ -46,6 +46,8 @@ class AnalyticsControllerIntegrationTest {
                 .andExpect(jsonPath("$.totalEventos").value(3))
                 .andExpect(jsonPath("$.comprasRegistradas").value(2))
                 .andExpect(jsonPath("$.ingresosComprasAcumulados").value(150.0000))
-                .andExpect(jsonPath("$.solicitudesAprobadasRegistradas").value(1));
+                .andExpect(jsonPath("$.solicitudesAprobadasRegistradas").value(1))
+                .andExpect(jsonPath("$.consultasCatalogoRegistradas").value(0))
+                .andExpect(jsonPath("$.tendenciasMarketingResumen").exists());
     }
 }

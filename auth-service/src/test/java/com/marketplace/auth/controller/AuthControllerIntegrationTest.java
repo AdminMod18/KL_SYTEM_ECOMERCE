@@ -57,4 +57,26 @@ class AuthControllerIntegrationTest {
         JsonNode rolesJson = objectMapper.readTree(roles.getResponse().getContentAsString());
         assertThat(rolesJson.get("roles").toString()).contains("ADMIN");
     }
+
+    @Test
+    void refreshJwt_conTokenValido_admin() throws Exception {
+        String body = """
+                {"username":"admin","password":"admin123"}
+                """;
+
+        MvcResult login = mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        JsonNode json = objectMapper.readTree(login.getResponse().getContentAsString());
+        String token = json.get("accessToken").asText();
+
+        mockMvc.perform(post("/auth/refresh").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.tokenType").value("Bearer"))
+                .andExpect(jsonPath("$.accessToken").exists())
+                .andExpect(jsonPath("$.roles").isArray());
+    }
 }

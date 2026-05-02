@@ -24,4 +24,7 @@ spring:
 order:
   pricing:
     tax-rate: 0.19
+    commission-rate: 0.05
     shipping-flat: 5.00
+    shipping-nacional: 8.00
+    shipping-internacional: 25.00

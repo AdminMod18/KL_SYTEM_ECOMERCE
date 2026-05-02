@@ -30,7 +30,7 @@ class UsuarioControllerIntegrationTest {
     @Test
     void crudUsuario() throws Exception {
         String crear = """
-                {"nombreUsuario":"hugo","email":"hugo@demo.com","nombreCompleto":"Hugo Demo"}
+                {"nombreUsuario":"hugo","email":"hugo@demo.com","nombreCompleto":"Hugo Demo","password":"password123"}
                 """;
 
         mockMvc.perform(post("/usuarios").contentType(MediaType.APPLICATION_JSON).content(crear))

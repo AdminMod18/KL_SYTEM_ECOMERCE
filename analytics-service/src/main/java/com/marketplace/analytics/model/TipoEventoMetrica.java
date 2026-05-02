@@ -7,5 +7,7 @@ package com.marketplace.analytics.model;
  */
 public enum TipoEventoMetrica {
     COMPRA,
-    SOLICITUD_APROBADA
+    SOLICITUD_APROBADA,
+    /** HU-23/24: búsquedas o vistas en catálogo para tendencias. */
+    CONSULTA_CATALOGO
 }

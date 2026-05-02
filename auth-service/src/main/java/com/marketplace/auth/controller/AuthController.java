@@ -4,6 +4,7 @@ import com.marketplace.auth.config.OpenApiConfig;
 import com.marketplace.auth.dto.LoginRequest;
 import com.marketplace.auth.dto.LoginResponse;
 import com.marketplace.auth.dto.RolesResponse;
+import com.marketplace.auth.dto.SincronizarVendedorRequest;
 import com.marketplace.auth.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -62,5 +63,41 @@ public class AuthController {
             @Parameter(name = HttpHeaders.AUTHORIZATION, description = "Encabezado Authorization con esquema Bearer y el JWT", in = ParameterIn.HEADER, required = true)
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {
         return authService.rolesDesdeAuthorization(authorization);
+    }
+
+    @Operation(
+            summary = "Renovar JWT",
+            description = "Con un Bearer válido (aunque lleve roles antiguos), obtiene roles vigentes en user-service y devuelve un token nuevo.")
+    @SecurityRequirement(name = OpenApiConfig.SECURITY_SCHEME_BEARER)
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Token renovado"),
+            @ApiResponse(responseCode = "401", description = "Token ausente, inválido o expirado", content = @Content)
+    })
+    @PostMapping("/refresh")
+    public LoginResponse refresh(
+            @Parameter(name = HttpHeaders.AUTHORIZATION, in = ParameterIn.HEADER, required = true)
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {
+        return authService.refreshDesdeAuthorization(authorization);
+    }
+
+    @Operation(
+            summary = "Sincronizar rol vendedor",
+            description =
+                    "Con sesión válida: lee la solicitud ACTIVA por id, vuelve a aplicar promoción VENDEDOR en user-service "
+                            + "según documento/correo de la solicitud y devuelve JWT con roles actualizados.")
+    @SecurityRequirement(name = OpenApiConfig.SECURITY_SCHEME_BEARER)
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Token emitido con roles vigentes"),
+            @ApiResponse(responseCode = "401", description = "Token ausente o inválido", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Solicitud no existe", content = @Content),
+            @ApiResponse(responseCode = "409", description = "Solicitud no está ACTIVA", content = @Content),
+            @ApiResponse(responseCode = "503", description = "solicitud-service no configurado", content = @Content)
+    })
+    @PostMapping("/sincronizar-vendedor")
+    public LoginResponse sincronizarVendedor(
+            @Parameter(name = HttpHeaders.AUTHORIZATION, in = ParameterIn.HEADER, required = true)
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
+            @Valid @RequestBody SincronizarVendedorRequest body) {
+        return authService.sincronizarVendedorDesdeSolicitud(authorization, body);
     }
 }

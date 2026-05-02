@@ -4,6 +4,8 @@ import com.marketplace.payment.dto.PagoRequest;
 import com.marketplace.payment.dto.PagoResponse;
 import com.marketplace.payment.factory.PaymentStrategyFactory;
 import com.marketplace.payment.strategy.PaymentStrategy;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 /**
@@ -14,6 +16,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class PagoService {
 
+    private static final Logger log = LoggerFactory.getLogger(PagoService.class);
+
     private final PaymentStrategyFactory paymentStrategyFactory;
 
     public PagoService(PaymentStrategyFactory paymentStrategyFactory) {
@@ -22,6 +26,13 @@ public class PagoService {
 
     public PagoResponse procesarPago(PagoRequest request) {
         PaymentStrategy estrategia = paymentStrategyFactory.obtenerEstrategia(request.getTipo());
-        return estrategia.procesar(request);
+        PagoResponse respuesta = estrategia.procesar(request);
+        log.info(
+                "Pago procesado referencia={} tipo={} estado={} idTransaccion={}",
+                request.getReferenciaCliente(),
+                request.getTipo(),
+                respuesta.estado(),
+                respuesta.idTransaccion());
+        return respuesta;
     }
 }

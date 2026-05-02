@@ -12,4 +12,18 @@ public interface SolicitudEstadoBehavior {
     SolicitudEstado estado();
 
     void assertTransicionPermitida(SolicitudEstado destino);
+
+    /**
+     * {@code PENDIENTE} y {@code DEVUELTA} pueden ejecutar {@code POST /validacion-automatica}; el resto devuelve 409.
+     */
+    default boolean permiteValidacionAutomatica() {
+        return false;
+    }
+
+    /**
+     * Texto orientado a operadores / auditoría del significado del estado en el flujo de solicitud.
+     */
+    default String descripcionFlujo() {
+        return estado().name();
+    }
 }

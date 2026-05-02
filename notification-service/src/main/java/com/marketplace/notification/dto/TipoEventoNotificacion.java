@@ -7,5 +7,13 @@ package com.marketplace.notification.dto;
  */
 public enum TipoEventoNotificacion {
     COMPRA,
-    SOLICITUD_APROBADA
+    SOLICITUD_APROBADA,
+    /** Resultado negativo de evaluación con motivo en referencia (HU-09). */
+    SOLICITUD_RECHAZADA,
+    /** Solicitud devuelta para corrección (HU-09). */
+    SOLICITUD_DEVUELTA,
+    SOLICITUD_MORA,
+    SOLICITUD_CANCELACION_SUSCRIPCION,
+    /** Baja automatica por reputacion del vendedor (caso estudio). */
+    SOLICITUD_CANCELACION_REPUTACION
 }

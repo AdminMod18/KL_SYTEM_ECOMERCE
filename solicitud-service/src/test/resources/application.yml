@@ -1,0 +1,4 @@
+# Evita que el job de suscripción ejecute durante los tests de integración.
+solicitud:
+  suscripcion:
+    scheduler-habilitado: false

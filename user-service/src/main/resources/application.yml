@@ -7,6 +7,11 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
 
+# Secreto compartido con auth-service para POST /interno/verificar-credenciales
+integration:
+  interno:
+    secret: ${USER_SERVICE_INTERNAL_SECRET:kl-dev-internal-secret-cambiar}
+
 spring:
   application:
     name: user-service

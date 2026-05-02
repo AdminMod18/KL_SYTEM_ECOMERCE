@@ -29,3 +29,52 @@ springdoc:
 logging:
   level:
     com.marketplace: INFO
+
+# Almacenamiento local de adjuntos; ciclo de suscripción del vendedor activo (vencimiento / mora / job).
+solicitud:
+  adjuntos:
+    base-path: ${SOLICITUD_ADJUNTOS_BASE_PATH:}
+  suscripcion:
+    periodo-renovacion: ${SOLICITUD_SUSCRIPCION_PERIODO:P30D}
+    demora-antes-mora: ${SOLICITUD_SUSCRIPCION_DEMORA_MORA:P1D}
+    gracia-cancelacion-desde-mora: ${SOLICITUD_SUSCRIPCION_GRACIA_CANCEL:P30D}
+    gracia-cancelacion-legacy-sin-fecha-mora: ${SOLICITUD_SUSCRIPCION_GRACIA_LEGACY:P30D}
+    scheduler-habilitado: ${SOLICITUD_SUSCRIPCION_SCHEDULER:true}
+    job-fixed-delay-ms: ${SOLICITUD_SUSCRIPCION_JOB_MS:3600000}
+  reputacion:
+    umbral-calificaciones-malas: ${SOLICITUD_REPUTACION_MALAS:10}
+    umbral-promedio: ${SOLICITUD_REPUTACION_PROMEDIO:5.0}
+    scheduler-habilitado: ${SOLICITUD_REPUTACION_SCHEDULER:true}
+    job-fixed-delay-ms: ${SOLICITUD_REPUTACION_JOB_MS:3600000}
+
+# Integración con validation-service (POST {base-url}/validar)
+integracion:
+  validation:
+    # URL base sin barra final (validation-service por defecto en 9004).
+    # Sobrescribir con variable de entorno INTEGRACION_VALIDATION_BASE_URL en despliegues.
+    base-url: ${INTEGRACION_VALIDATION_BASE_URL:http://127.0.0.1:9004}
+    # Timeouts del cliente HTTP (Spring Boot Duration: 5s, 500ms, 1m, etc.)
+    connect-timeout: 5s
+    read-timeout: 30s
+  payment:
+    # URL base sin barra final (payment-service por defecto en 9005).
+    base-url: ${INTEGRACION_PAYMENT_BASE_URL:http://127.0.0.1:9005}
+    connect-timeout: 5s
+    read-timeout: 30s
+  notification:
+    # Opcional: SOLICITUD_MORA, SOLICITUD_CANCELACION_SUSCRIPCION, SOLICITUD_CANCELACION_REPUTACION.
+    base-url: ${INTEGRACION_NOTIFICATION_BASE_URL:}
+    connect-timeout: 5s
+    read-timeout: 15s
+  admin:
+    # Opcional: GET {base-url}/admin/parametros para overrides en tiempo de ejecución (sincronización periódica).
+    base-url: ${INTEGRACION_ADMIN_BASE_URL:}
+    sync-fixed-delay-ms: ${INTEGRACION_ADMIN_SYNC_MS:300000}
+    connect-timeout: 5s
+    read-timeout: 15s
+  user-service:
+    # Opcional: POST promover-vendedor al pasar solicitud a ACTIVA (mismo secreto que auth-service → user-service).
+    base-url: ${USER_SERVICE_BASE_URL:}
+    internal-secret: ${USER_SERVICE_INTERNAL_SECRET:}
+    connect-timeout: 5s
+    read-timeout: 15s

@@ -13,6 +13,10 @@ public record KpiResponse(
         long comprasRegistradas,
         BigDecimal ingresosComprasAcumulados,
         long solicitudesAprobadasRegistradas,
-        Instant ultimoEventoEn
+        long consultasCatalogoRegistradas,
+        String skuCompraMasFrecuente,
+        String textoConsultaMasFrecuente,
+        Instant ultimoEventoEn,
+        String tendenciasMarketingResumen
 ) {
 }

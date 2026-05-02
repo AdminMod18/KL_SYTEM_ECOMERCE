@@ -12,6 +12,7 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Propósito: respuestas coherentes ante validación, conflictos y no encontrado.
@@ -32,6 +33,12 @@ public class GlobalExceptionHandler {
             campos.put(fe.getField(), fe.getDefaultMessage());
         }
         pd.setProperty("campos", campos);
+        if (!campos.isEmpty()) {
+            pd.setDetail(
+                    campos.entrySet().stream()
+                            .map(e -> e.getKey() + ": " + e.getValue())
+                            .collect(Collectors.joining("; ")));
+        }
         return pd;
     }
 

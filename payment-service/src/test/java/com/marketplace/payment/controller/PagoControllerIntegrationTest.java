@@ -1,5 +1,6 @@
 package com.marketplace.payment.controller;
 
+import com.marketplace.payment.strategy.OnlinePaymentStrategy;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -64,5 +65,18 @@ class PagoControllerIntegrationTest {
                 """;
         mockMvc.perform(post("/pagos").contentType(MediaType.APPLICATION_JSON).content(json))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void pagoOnline_tokenSimularRechazo_devuelveDeclinado() throws Exception {
+        String json =
+                """
+                {"tipo":"ONLINE","monto":10,"referenciaCliente":"QA-DECL","tokenPasarela":"%s"}
+                """
+                        .formatted(OnlinePaymentStrategy.TOKEN_SIMULAR_RECHAZO);
+        mockMvc.perform(post("/pagos").contentType(MediaType.APPLICATION_JSON).content(json))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.estado").value("DECLINADO"))
+                .andExpect(jsonPath("$.tipo").value("ONLINE"));
     }
 }

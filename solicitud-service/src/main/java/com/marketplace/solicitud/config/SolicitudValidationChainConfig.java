@@ -3,7 +3,9 @@ package com.marketplace.solicitud.config;
 import com.marketplace.solicitud.chain.CamposObligatoriosHandler;
 import com.marketplace.solicitud.chain.DocumentoIdentidadFormatoHandler;
 import com.marketplace.solicitud.chain.DocumentoNoDuplicadoHandler;
+import com.marketplace.solicitud.chain.DocumentosPorTipoPersonaHandler;
 import com.marketplace.solicitud.chain.SolicitudValidationHandler;
+import com.marketplace.solicitud.chain.TelefonoBasicoHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -20,9 +22,13 @@ public class SolicitudValidationChainConfig {
     @Primary
     public SolicitudValidationHandler solicitudValidationChain(
             CamposObligatoriosHandler camposObligatoriosHandler,
+            TelefonoBasicoHandler telefonoBasicoHandler,
+            DocumentosPorTipoPersonaHandler documentosPorTipoPersonaHandler,
             DocumentoIdentidadFormatoHandler documentoIdentidadFormatoHandler,
             DocumentoNoDuplicadoHandler documentoNoDuplicadoHandler) {
-        camposObligatoriosHandler.enlazar(documentoIdentidadFormatoHandler);
+        camposObligatoriosHandler.enlazar(telefonoBasicoHandler);
+        telefonoBasicoHandler.enlazar(documentosPorTipoPersonaHandler);
+        documentosPorTipoPersonaHandler.enlazar(documentoIdentidadFormatoHandler);
         documentoIdentidadFormatoHandler.enlazar(documentoNoDuplicadoHandler);
         return camposObligatoriosHandler;
     }

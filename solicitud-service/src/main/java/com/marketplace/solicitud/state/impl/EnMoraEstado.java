@@ -18,4 +18,9 @@ public class EnMoraEstado extends AbstractEstadoSolicitud {
         super(SolicitudEstado.EN_MORA,
                 Set.of(SolicitudEstado.ACTIVA, SolicitudEstado.CANCELADA));
     }
+
+    @Override
+    public String descripcionFlujo() {
+        return "En mora: regularización a ACTIVA o cierre CANCELADA.";
+    }
 }

@@ -1,5 +1,6 @@
 package com.marketplace.validation.dto;
 
+import com.marketplace.validation.domain.ExigenciaJudicial;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -27,4 +28,9 @@ public class ValidacionRequest {
      */
     @NotBlank
     private String contenidoArchivoCifin;
+
+    /**
+     * Si el Director Comercial registra consulta de antecedentes (HU-07), sustituye el mock judicial.
+     */
+    private ExigenciaJudicial exigenciaJudicialDirector;
 }

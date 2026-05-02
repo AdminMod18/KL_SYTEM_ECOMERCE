@@ -33,7 +33,13 @@ public abstract class AbstractEstadoSolicitud implements SolicitudEstadoBehavior
         if (!destinosPermitidos.contains(destino)) {
             throw new SolicitudBusinessException(
                     "TRANSICION_INVALIDA",
-                    "No está permitido pasar de " + estado + " a " + destino + ".");
+                    "No está permitido pasar de " + estado + " a " + destino
+                            + ". Destinos permitidos desde " + estado + ": " + destinosPermitidos + ".");
         }
+    }
+
+    @Override
+    public boolean permiteValidacionAutomatica() {
+        return false;
     }
 }

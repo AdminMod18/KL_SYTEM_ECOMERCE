@@ -37,6 +37,23 @@ public class Orden {
     @Column(nullable = false, length = 64)
     private String clienteId;
 
+    @Column(length = 120)
+    private String paisEnvio;
+
+    @Column(length = 120)
+    private String ciudadEnvio;
+
+    @Column(length = 240)
+    private String direccionEnvio;
+
+    /**
+     * HU-20: RECOGIDA en punto físico o DOMICILIO.
+     * Nullable en BD para que Hibernate pueda añadir la columna en Postgres con datos previos
+     * (un {@code NOT NULL} directo en el ALTER falla si ya existen filas).
+     */
+    @Column(name = "tipo_entrega", length = 24)
+    private String tipoEntrega = "DOMICILIO";
+
     @Column(nullable = false, precision = 19, scale = 4)
     private BigDecimal total;
 
@@ -50,6 +67,9 @@ public class Orden {
     void onCreate() {
         if (creadoEn == null) {
             creadoEn = Instant.now();
+        }
+        if (tipoEntrega == null || tipoEntrega.isBlank()) {
+            tipoEntrega = "DOMICILIO";
         }
     }
 

@@ -1,18 +1,26 @@
 package com.marketplace.user.dto;
 
-import java.time.Instant;
+import com.marketplace.user.model.TipoPersonaComprador;
 
-/**
- * Propósito: vista REST de un usuario persistido.
- * Patrón: DTO de salida.
- * Responsabilidad: exponer identificador, datos públicos y auditoría mínima.
- */
+import java.time.Instant;
+import java.util.List;
+
 public record UsuarioResponse(
         Long id,
         String nombreUsuario,
         String email,
         String nombreCompleto,
+        String nombres,
+        String apellidos,
+        String direccionResidencia,
+        String redSocialTwitter,
+        String redSocialInstagram,
+        String telefono,
+        String paisResidencia,
+        String ciudadResidencia,
+        String documentoIdentidad,
+        TipoPersonaComprador tipoPersona,
+        List<String> roles,
         Instant creadoEn,
-        Instant actualizadoEn
-) {
+        Instant actualizadoEn) {
 }

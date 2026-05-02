@@ -18,4 +18,9 @@ public class ActivaEstado extends AbstractEstadoSolicitud {
         super(SolicitudEstado.ACTIVA,
                 Set.of(SolicitudEstado.EN_MORA, SolicitudEstado.CANCELADA));
     }
+
+    @Override
+    public String descripcionFlujo() {
+        return "Activa: mora EN_MORA o baja CANCELADA.";
+    }
 }

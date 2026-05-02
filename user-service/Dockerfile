@@ -1,19 +1,17 @@
-# syntax=docker/dockerfile:1
-FROM gradle:8.10.2-jdk21 AS build
+FROM gradle:8-jdk21 AS build
 WORKDIR /workspace
-COPY build.gradle settings.gradle* ./
-RUN --mount=type=cache,target=/home/gradle/.gradle \
-    gradle dependencies --no-daemon -q || true
-COPY src ./src
-RUN --mount=type=cache,target=/home/gradle/.gradle \
-    gradle bootJar --no-daemon -x test
+COPY . .
+RUN gradle build -x test --no-daemon \
+    && JAR=$(find build/libs -maxdepth 1 -name '*.jar' ! -name '*-plain.jar' | head -n1) \
+    && test -n "$JAR" \
+    && cp "$JAR" /workspace/app.jar
 
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:21-jdk-alpine
+RUN apk add --no-cache curl
 ENV SERVER_PORT=9002
-ENV JAVA_OPTS="-XX:MaxRAMPercentage=75.0 -XX:+UseContainerSupport"
 WORKDIR /app
-RUN addgroup -S app && adduser -S app -G app
-COPY --from=build --chown=app:app /workspace/build/libs/*.jar app.jar
-USER app
+COPY --from=build /workspace/app.jar /app/app.jar
 EXPOSE 9002
-ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -Dserver.port=${SERVER_PORT} -jar /app/app.jar"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=90s --retries=5 \
+    CMD curl -sf "http://127.0.0.1:9002/v3/api-docs" > /dev/null || exit 1
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]

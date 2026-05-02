@@ -1,19 +1,30 @@
 package com.marketplace.product.dto;
 
+import com.marketplace.product.model.CondicionProductoCatalogo;
+import com.marketplace.product.model.OriginalidadProducto;
+
 import java.math.BigDecimal;
 import java.time.Instant;
 
 /**
- * Propósito: vista REST estable de un producto publicado.
- * Patrón: DTO de salida.
- * Responsabilidad: exponer datos del catálogo sin acoplar la entidad.
+ * Vista REST de producto con atributos extendidos del caso de estudio.
  */
 public record ProductoResponse(
         Long id,
+        Long vendedorSolicitudId,
         String nombre,
         BigDecimal precio,
         String descripcion,
         String rutaCategoria,
-        Instant creadoEn
-) {
+        String subcategoria,
+        String marca,
+        OriginalidadProducto originalidad,
+        String color,
+        String tamano,
+        Integer pesoGramos,
+        String talla,
+        CondicionProductoCatalogo condicion,
+        Integer cantidadStock,
+        String imagenesUrls,
+        Instant creadoEn) {
 }

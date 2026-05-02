@@ -27,7 +27,11 @@ public class AuthDataConfig {
     public Map<String, CuentaUsuario> usuariosDemo(PasswordEncoder passwordEncoder) {
         Map<String, CuentaUsuario> mapa = new HashMap<>();
         mapa.put("admin", new CuentaUsuario(passwordEncoder.encode("admin123"), List.of("ADMIN", "USER")));
-        mapa.put("vendedor", new CuentaUsuario(passwordEncoder.encode("vendedor123"), List.of("VENDEDOR")));
+        mapa.put(
+                "vendedor",
+                new CuentaUsuario(
+                        passwordEncoder.encode("vendedor123"),
+                        List.of("VENDEDOR", "COMPRADOR", "USER")));
         return Map.copyOf(mapa);
     }
 }

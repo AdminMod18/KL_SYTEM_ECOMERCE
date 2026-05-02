@@ -9,13 +9,30 @@ import java.util.Set;
 /**
  * Propósito: solicitud devuelta al vendedor para subsanar información.
  * Patrón: State (estado concreto).
- * Responsabilidad: permitir reingreso al flujo o cancelación definitiva.
+ * Responsabilidad: permite {@code POST /validacion-automatica} de nuevo (mismos destinos que desde PENDIENTE),
+ * además de pasar manualmente a PENDIENTE o CANCELADA.
  */
 @Component
 public class DevueltaEstado extends AbstractEstadoSolicitud {
 
     public DevueltaEstado() {
-        super(SolicitudEstado.DEVUELTA,
-                Set.of(SolicitudEstado.PENDIENTE, SolicitudEstado.CANCELADA));
+        super(
+                SolicitudEstado.DEVUELTA,
+                Set.of(
+                        SolicitudEstado.PENDIENTE,
+                        SolicitudEstado.CANCELADA,
+                        SolicitudEstado.APROBADA,
+                        SolicitudEstado.RECHAZADA,
+                        SolicitudEstado.DEVUELTA));
+    }
+
+    @Override
+    public boolean permiteValidacionAutomatica() {
+        return true;
+    }
+
+    @Override
+    public String descripcionFlujo() {
+        return "Devuelta: reintentar validación automática (APROBADA/RECHAZADA/DEVUELTA), volver a PENDIENTE o cancelar.";
     }
 }

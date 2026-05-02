@@ -22,6 +22,20 @@ public class OrdenCreateRequest {
     @Size(max = 64)
     private String clienteId;
 
+    /** Opcional: si falta, el envío usa tarifa local por defecto (config). */
+    @Size(max = 120)
+    private String paisEnvio;
+
+    @Size(max = 120)
+    private String ciudadEnvio;
+
+    @Size(max = 240)
+    private String direccionEnvio;
+
+    /** {@code RECOGIDA} o {@code DOMICILIO} (HU-20). Por defecto DOMICILIO en servidor si viene vacío. */
+    @Size(max = 24)
+    private String tipoEntrega;
+
     @NotEmpty
     @Valid
     private List<LineaOrdenRequest> lineas;
