@@ -64,7 +64,9 @@ public class ProductoCreateRequest {
     private Integer cantidadStock;
 
     /**
-     * Lista de URLs de imagen (se serializa como lista JSON); opcional.
+     * Lista de URLs públicas o data URLs (demo: imágenes comprimidas en el cliente). Opcional.
+     * La longitud por elemento se valida en {@link com.marketplace.product.service.ProductoService}
+     * (evita límites antiguos de 500 caracteres en despliegues con JAR previo).
      */
-    private List<@Size(max = 500) String> imagenesUrls;
+    private List<String> imagenesUrls;
 }

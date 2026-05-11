@@ -77,8 +77,8 @@ public class Producto {
     @Column(name = "cantidad_stock", nullable = false)
     private Integer cantidadStock = 0;
 
-    /** URLs separadas por coma (demo sin almacenamiento de binarios). */
-    @Column(length = 2000)
+    /** URLs o data URLs separadas por coma (demo; en producción usar CDN/objeto). */
+    @Column(columnDefinition = "TEXT")
     private String imagenesUrls;
 
     /** Id de la solicitud de vendedor en solicitud-service (vendedor habilitado). */

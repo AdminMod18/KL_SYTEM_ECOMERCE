@@ -19,6 +19,9 @@ spring:
 
 server:
   port: ${SERVER_PORT:9003}
+  # POST JSON con varios adjuntos en Base64 (creación de solicitud).
+  tomcat:
+    max-http-form-post-size: 32MB
 
 springdoc:
   api-docs:

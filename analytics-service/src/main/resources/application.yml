@@ -10,6 +10,9 @@ springdoc:
 spring:
   application:
     name: analytics-service
+  flyway:
+    # Solo se activa en perfil `docker` (PostgreSQL compartido); ver application-docker.yml.
+    enabled: false
   datasource:
     url: jdbc:h2:mem:analytics;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
     driver-class-name: org.h2.Driver

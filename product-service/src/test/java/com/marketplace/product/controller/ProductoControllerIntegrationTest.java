@@ -2,6 +2,8 @@ package com.marketplace.product.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.marketplace.product.integration.VendedorActivoPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer;
@@ -94,5 +96,26 @@ class ProductoControllerIntegrationTest {
         mockMvc.perform(get("/productos/" + productoId + "/interacciones"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(0)));
+    }
+
+    @Test
+    @Order(3)
+    void crearProducto_conVariasImagenesUrlLargas_aceptado() throws Exception {
+        ObjectNode body = objectMapper.createObjectNode();
+        body.put("vendedorSolicitudId", 300);
+        body.put("nombre", "Producto varias fotos");
+        body.put("precio", 49.99);
+        body.put("descripcion", "Demo varias tomas / data URL");
+        body.set("categorias", objectMapper.createArrayNode().add("Tecnologia"));
+        ArrayNode imgs = objectMapper.createArrayNode();
+        imgs.add("https://cdn.test/img.jpg?" + "p".repeat(900));
+        imgs.add("data:image/jpeg;base64," + "Z".repeat(2500));
+        body.set("imagenesUrls", imgs);
+
+        mockMvc.perform(post("/productos")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(body)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.imagenesUrls").exists());
     }
 }

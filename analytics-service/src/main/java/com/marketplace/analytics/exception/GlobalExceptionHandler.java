@@ -2,6 +2,7 @@ package com.marketplace.analytics.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -31,6 +32,21 @@ public class GlobalExceptionHandler {
             campos.put(fe.getField(), fe.getDefaultMessage());
         }
         pd.setProperty("campos", campos);
+        return pd;
+    }
+
+    /**
+     * Cuerpo JSON mal formado o {@code tipo} que no coincide con {@link com.marketplace.analytics.model.TipoEventoMetrica}
+     * (p. ej. imagen Docker antigua del analytics-service).
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    ProblemDetail handleNotReadable(HttpMessageNotReadableException ex) {
+        ProblemDetail pd = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+        pd.setTitle("Cuerpo JSON inválido o enum desconocido");
+        pd.setType(URI.create("about:blank"));
+        pd.setProperty("timestamp", Instant.now().toString());
+        Throwable cause = ex.getMostSpecificCause();
+        pd.setDetail(cause != null ? cause.getMessage() : ex.getMessage());
         return pd;
     }
 }

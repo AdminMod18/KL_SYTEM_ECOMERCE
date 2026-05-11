@@ -10,8 +10,10 @@ import com.marketplace.product.integration.VendedorActivoPort;
 import com.marketplace.product.repository.ProductoRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -26,6 +28,12 @@ public class ProductoService {
 
     private static final Logger log = LoggerFactory.getLogger(ProductoService.class);
 
+    /** Máximo de entradas de imagen (archivo comprimido y/o URL) por producto. */
+    private static final int MAX_IMAGENES = 12;
+
+    /** Tamaño máximo por cadena (URL o data URL), suficiente para JPEG comprimido en demo. */
+    private static final int MAX_CARACTERES_POR_IMAGEN = 250_000;
+
     private final ProductoRepository productoRepository;
     private final VendedorActivoPort vendedorActivoPort;
 
@@ -36,6 +44,7 @@ public class ProductoService {
 
     @Transactional
     public ProductoResponse crear(ProductoCreateRequest request) {
+        validarImagenesUrls(request.getImagenesUrls());
         vendedorActivoPort.assertVendedorEnEstadoActiva(request.getVendedorSolicitudId());
         String rutaCategoria = construirRutaCategoria(request.getCategorias());
         Producto producto = new ProductoBuilderImpl()
@@ -104,9 +113,32 @@ public class ProductoService {
         if (urls == null || urls.isEmpty()) {
             return null;
         }
+        /** No usar coma: las data URLs incluyen "," tras "base64," y romperían el split en el cliente. */
         return urls.stream()
                 .filter(u -> u != null && !u.isBlank())
                 .map(String::trim)
-                .collect(Collectors.joining(","));
+                .collect(Collectors.joining("\n"));
+    }
+
+    private static void validarImagenesUrls(List<String> urls) {
+        if (urls == null || urls.isEmpty()) {
+            return;
+        }
+        if (urls.size() > MAX_IMAGENES) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "Máximo " + MAX_IMAGENES + " imágenes (varias tomas / URLs).");
+        }
+        for (int i = 0; i < urls.size(); i++) {
+            String raw = urls.get(i);
+            if (raw == null || raw.isBlank()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "imagenesUrls[" + i + "]: valor vacío.");
+            }
+            String u = raw.trim();
+            if (u.length() > MAX_CARACTERES_POR_IMAGEN) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "imagenesUrls[" + i + "]: supera " + MAX_CARACTERES_POR_IMAGEN + " caracteres; comprime más o usa URL.");
+            }
+        }
     }
 }
