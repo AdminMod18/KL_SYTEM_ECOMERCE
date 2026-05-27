@@ -1,0 +1,12 @@
+# ALB/ECS: GET /auth/actuator/health
+management:
+  endpoints:
+    web:
+      base-path: /auth/actuator
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true

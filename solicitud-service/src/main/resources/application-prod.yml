@@ -1,0 +1,28 @@
+# Perfil prod (ECS): PostgreSQL RDS + health ALB /solicitudes/actuator/health
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:kl_ecommerce}
+    username: ${DB_USER:${SPRING_DATASOURCE_USERNAME:kl_admin}}
+    password: ${DB_PASSWORD:${SPRING_DATASOURCE_PASSWORD:}}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  h2:
+    console:
+      enabled: false
+
+management:
+  endpoints:
+    web:
+      base-path: /solicitudes/actuator
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true

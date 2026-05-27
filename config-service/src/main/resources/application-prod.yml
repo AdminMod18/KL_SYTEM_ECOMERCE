@@ -1,0 +1,12 @@
+# ALB/ECS: GET /config/actuator/health (puerto 9011 en task definition)
+management:
+  endpoints:
+    web:
+      base-path: /config/actuator
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true

@@ -1,0 +1,12 @@
+# ALB/ECS: GET /notifications/actuator/health
+management:
+  endpoints:
+    web:
+      base-path: /notifications/actuator
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true

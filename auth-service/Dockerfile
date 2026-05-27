@@ -13,6 +13,6 @@ ENV SERVER_PORT=9001
 WORKDIR /app
 COPY --from=build /workspace/app.jar /app/app.jar
 EXPOSE 9001
-HEALTHCHECK --interval=30s --timeout=5s --start-period=90s --retries=5 \
-    CMD curl -sf "http://127.0.0.1:9001/v3/api-docs" > /dev/null || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=150s --retries=5 \
+    CMD curl -sf "http://127.0.0.1:9001/auth/actuator/health" > /dev/null || exit 1
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]

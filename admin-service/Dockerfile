@@ -12,6 +12,6 @@ ENV SERVER_PORT=9010
 WORKDIR /app
 COPY --from=build /workspace/app.jar /app/app.jar
 EXPOSE 9010
-HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=5 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=150s --retries=5 \
     CMD curl -sf "http://127.0.0.1:9010/admin/actuator/health" > /dev/null || exit 1
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]

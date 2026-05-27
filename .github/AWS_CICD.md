@@ -146,3 +146,61 @@ Los cambios solo en `.github/**` ahora disparan deploy de **los 11** microservic
 
 - **Local:** `aws configure` + SDK en tu máquina.
 - **GitHub:** solo OIDC o secrets; no hace falta SSM Parameter Store salvo que quieras guardar secretos de app en ECS (JWT, DB password) — eso va en task definition / Secrets Manager, no en el pipeline de build.
+
+## Tareas ECS con exit code 1 (runtime, no compilación)
+
+Si el workflow de deploy es verde pero ECS muestra **Essential container exited** / código **1**:
+
+1. Revisa **CloudWatch Logs** → `/ecs/kl-ecommerce/prod/{micro}`.
+2. Errores frecuentes vistos en prod:
+
+| Síntoma en logs | Causa | Acción |
+|-----------------|-------|--------|
+| `Cannot load driver class: org.postgresql.Driver` | JAR sin dependencia `postgresql` (ej. `admin-service`) | Añadir `runtimeOnly 'org.postgresql:postgresql'` y redesplegar imagen. |
+| `UnknownHostException: ...rds.amazonaws.com:5432` | URL JDBC mal formada en la task definition | Corregir Terraform: la URL debe ser `jdbc:postgresql://HOST:5432/DB`, **no** `...:5432:5432/...`. |
+| `The connection attempt failed` (sin UnknownHost) | RDS inaccesible (SG, subnets, credenciales) | Revisar security groups ECS→RDS y parámetro SSM del password. |
+| `Task failed ELB health checks` con `Started ...Application` en logs | ALB comprueba antes de que arranque Spring (~90–120 s) | En el servicio ECS: `health_check_grace_period_seconds` ≥ **180**. En la task definition: `healthCheck.startPeriod` ≥ **150**. |
+| `Estado incorrecto` con Actuator en logs | Ruta distinta a la del ALB | Exponer `GET /admin/actuator/health` (u la ruta del target group) con `spring-boot-starter-actuator`. |
+
+**URL incorrecta actual (ejemplo):**
+
+```text
+jdbc:postgresql://kl-ecommerce-prod-postgres....amazonaws.com:5432:5432/kl_ecommerce
+```
+
+**URL correcta:**
+
+```text
+jdbc:postgresql://kl-ecommerce-prod-postgres....amazonaws.com:5432/kl_ecommerce
+```
+
+Script de corrección puntual en todas las task definitions (una vez, hasta arreglar Terraform):
+
+```powershell
+.\scripts\fix-ecs-datasource-url.ps1
+```
+
+Luego vuelve a desplegar con GitHub Actions (`deploy_all=true`) para que las imágenes incluyan Actuator y PostgreSQL donde aplique.
+
+### Perfil `prod` en cada micro (código)
+
+Cada `*-service` incluye `src/main/resources/application-prod.yml` con:
+
+- **JPA + RDS:** `postgresql` en `build.gradle`, datasource PostgreSQL, Actuator en la ruta del ALB.
+- **Sin JPA:** solo Actuator en la ruta del ALB.
+
+| Micro | Health (ALB/ECS) |
+|-------|------------------|
+| auth-service | `/auth/actuator/health` :9001 |
+| user-service | `/users/actuator/health` :9002 |
+| solicitud-service | `/solicitudes/actuator/health` :9003 |
+| validation-service | `/validation/actuator/health` :9004 |
+| payment-service | `/payments/actuator/health` :9005 |
+| order-service | `/orders/actuator/health` :9006 |
+| product-service | `/products/actuator/health` :9007 |
+| notification-service | `/notifications/actuator/health` :9008 |
+| analytics-service | `/analytics/actuator/health` :9009 |
+| admin-service | `/admin/actuator/health` :9010 |
+| config-service | `/config/actuator/health` :9011 |
+
+Scripts puntuales en AWS (hasta corregir Terraform): `scripts/fix-ecs-datasource-url.ps1`, `scripts/fix-ecs-health-grace-period.ps1`.
