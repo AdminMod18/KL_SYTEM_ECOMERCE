@@ -127,6 +127,10 @@ Si tu Terraform usa otros nombres, ajusta `ECS_SERVICE_PREFIX` / `ECS_TASK_FAMIL
 
 Actions → **Deploy Backend AWS** → **Run workflow** → `deploy_all` = `true`.
 
+Si el workflow muestra **éxito** pero el job **deploy** aparece **omitido (skipped)**, es porque el push solo tocó documentación o `.github/` sin código de microservicios. En ese caso usa **Run workflow** con `deploy_all=true`, o haz un push que modifique al menos una carpeta `*-service/`.
+
+Los cambios solo en `.github/**` ahora disparan deploy de **los 11** microservicios automáticamente.
+
 ## Flujo local vs cloud
 
 - **Local:** `aws configure` + SDK en tu máquina.
