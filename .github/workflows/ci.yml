@@ -111,21 +111,12 @@ jobs:
       - name: Gradle test (${{ matrix.service }})
         working-directory: ${{ matrix.service }}
         run: |
-          chmod +x gradlew 2>/dev/null || true
-          if [ -f ./gradlew ]; then
-            ./gradlew test --no-daemon
-          else
-            gradle test --no-daemon
-          fi
+          chmod +x ./gradlew
+          ./gradlew test --no-daemon --stacktrace
 
       - name: Gradle build sin tests (${{ matrix.service }})
         working-directory: ${{ matrix.service }}
-        run: |
-          if [ -f ./gradlew ]; then
-            ./gradlew build -x test --no-daemon
-          else
-            gradle build -x test --no-daemon
-          fi
+        run: ./gradlew build -x test --no-daemon
 
   docker-build-smoke:
     needs: changes
