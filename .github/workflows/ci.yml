@@ -1,11 +1,11 @@
-# CI: compilación y tests Gradle por microservicio (PR y push a main).
+# CI: tests Gradle + build Docker por microservicio modificado (trunk: PR y push a main).
 name: CI Backend
 
 on:
   pull_request:
-    branches: [main, develop]
+    branches: [main]
   push:
-    branches: [main, develop]
+    branches: [main]
 
 concurrency:
   group: ci-backend-${{ github.ref }}
@@ -18,17 +18,7 @@ jobs:
   changes:
     runs-on: ubuntu-latest
     outputs:
-      auth-service: ${{ steps.filter.outputs.auth-service }}
-      user-service: ${{ steps.filter.outputs.user-service }}
-      solicitud-service: ${{ steps.filter.outputs.solicitud-service }}
-      validation-service: ${{ steps.filter.outputs.validation-service }}
-      payment-service: ${{ steps.filter.outputs.payment-service }}
-      order-service: ${{ steps.filter.outputs.order-service }}
-      product-service: ${{ steps.filter.outputs.product-service }}
-      notification-service: ${{ steps.filter.outputs.notification-service }}
-      analytics-service: ${{ steps.filter.outputs.analytics-service }}
-      admin-service: ${{ steps.filter.outputs.admin-service }}
-      config-service: ${{ steps.filter.outputs.config-service }}
+      services: ${{ steps.build-list.outputs.services }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -57,37 +47,57 @@ jobs:
               - 'admin-service/**'
             config-service:
               - 'config-service/**'
+            github:
+              - '.github/**'
+
+      - name: Lista de microservicios a validar
+        id: build-list
+        env:
+          F_AUTH: ${{ steps.filter.outputs.auth-service }}
+          F_USER: ${{ steps.filter.outputs.user-service }}
+          F_SOL: ${{ steps.filter.outputs.solicitud-service }}
+          F_VAL: ${{ steps.filter.outputs.validation-service }}
+          F_PAY: ${{ steps.filter.outputs.payment-service }}
+          F_ORD: ${{ steps.filter.outputs.order-service }}
+          F_PRO: ${{ steps.filter.outputs.product-service }}
+          F_NOT: ${{ steps.filter.outputs.notification-service }}
+          F_ANA: ${{ steps.filter.outputs.analytics-service }}
+          F_ADM: ${{ steps.filter.outputs.admin-service }}
+          F_CFG: ${{ steps.filter.outputs.config-service }}
+          F_GH: ${{ steps.filter.outputs.github }}
+        run: |
+          ALL='["auth-service","user-service","solicitud-service","validation-service","payment-service","order-service","product-service","notification-service","analytics-service","admin-service","config-service"]'
+          if [ "$F_GH" = "true" ]; then
+            echo "services=${ALL}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          LIST=()
+          [ "$F_AUTH" = "true" ] && LIST+=("auth-service")
+          [ "$F_USER" = "true" ] && LIST+=("user-service")
+          [ "$F_SOL" = "true" ] && LIST+=("solicitud-service")
+          [ "$F_VAL" = "true" ] && LIST+=("validation-service")
+          [ "$F_PAY" = "true" ] && LIST+=("payment-service")
+          [ "$F_ORD" = "true" ] && LIST+=("order-service")
+          [ "$F_PRO" = "true" ] && LIST+=("product-service")
+          [ "$F_NOT" = "true" ] && LIST+=("notification-service")
+          [ "$F_ANA" = "true" ] && LIST+=("analytics-service")
+          [ "$F_ADM" = "true" ] && LIST+=("admin-service")
+          [ "$F_CFG" = "true" ] && LIST+=("config-service")
+          if [ ${#LIST[@]} -eq 0 ]; then
+            echo "services=[]" >> "$GITHUB_OUTPUT"
+          else
+            JSON=$(printf '%s\n' "${LIST[@]}" | jq -R . | jq -s -c .)
+            echo "services=${JSON}" >> "$GITHUB_OUTPUT"
+          fi
 
   test:
     needs: changes
+    if: needs.changes.outputs.services != '[]'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - service: auth-service
-            filter: ${{ needs.changes.outputs.auth-service }}
-          - service: user-service
-            filter: ${{ needs.changes.outputs.user-service }}
-          - service: solicitud-service
-            filter: ${{ needs.changes.outputs.solicitud-service }}
-          - service: validation-service
-            filter: ${{ needs.changes.outputs.validation-service }}
-          - service: payment-service
-            filter: ${{ needs.changes.outputs.payment-service }}
-          - service: order-service
-            filter: ${{ needs.changes.outputs.order-service }}
-          - service: product-service
-            filter: ${{ needs.changes.outputs.product-service }}
-          - service: notification-service
-            filter: ${{ needs.changes.outputs.notification-service }}
-          - service: analytics-service
-            filter: ${{ needs.changes.outputs.analytics-service }}
-          - service: admin-service
-            filter: ${{ needs.changes.outputs.admin-service }}
-          - service: config-service
-            filter: ${{ needs.changes.outputs.config-service }}
-    if: matrix.filter == 'true'
+        service: ${{ fromJSON(needs.changes.outputs.services) }}
     steps:
       - uses: actions/checkout@v4
 
@@ -119,34 +129,12 @@ jobs:
 
   docker-build-smoke:
     needs: changes
+    if: needs.changes.outputs.services != '[]'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - service: auth-service
-            filter: ${{ needs.changes.outputs.auth-service }}
-          - service: user-service
-            filter: ${{ needs.changes.outputs.user-service }}
-          - service: solicitud-service
-            filter: ${{ needs.changes.outputs.solicitud-service }}
-          - service: validation-service
-            filter: ${{ needs.changes.outputs.validation-service }}
-          - service: payment-service
-            filter: ${{ needs.changes.outputs.payment-service }}
-          - service: order-service
-            filter: ${{ needs.changes.outputs.order-service }}
-          - service: product-service
-            filter: ${{ needs.changes.outputs.product-service }}
-          - service: notification-service
-            filter: ${{ needs.changes.outputs.notification-service }}
-          - service: analytics-service
-            filter: ${{ needs.changes.outputs.analytics-service }}
-          - service: admin-service
-            filter: ${{ needs.changes.outputs.admin-service }}
-          - service: config-service
-            filter: ${{ needs.changes.outputs.config-service }}
-    if: matrix.filter == 'true'
+        service: ${{ fromJSON(needs.changes.outputs.services) }}
     steps:
       - uses: actions/checkout@v4
 

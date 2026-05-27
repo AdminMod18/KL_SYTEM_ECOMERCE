@@ -1,5 +1,34 @@
 # CI/CD Backend → AWS (GitHub Actions)
 
+**Trunk-based:** rama única `main`. CI en PR y push a `main`; CD (deploy) solo en push a `main`.
+
+## Dónde configurar credenciales AWS (importante)
+
+Las variables que ves en **AWS CloudShell** (`AWS_CONTAINER_CREDENTIALS_*`, `AWS_EXECUTION_ENV=CloudShell`) **no** se copian a GitHub: son credenciales temporales del contenedor CloudShell y **caducan**.
+
+Configura en GitHub (repo **KL_SYTEM_ECOMERCE**):
+
+1. **Settings** → **Secrets and variables** → **Actions**
+2. Pestaña **Secrets** → **New repository secret**:
+   - `AWS_ACCESS_KEY_ID` — Access Key de un usuario IAM (o claves temporales exportadas)
+   - `AWS_SECRET_ACCESS_KEY` — Secret correspondiente
+3. Pestaña **Variables** → **New repository variable**:
+   - `AWS_REGION` = `us-east-2` (tu región en CloudShell)
+   - `ECS_CLUSTER`, `ECS_SERVICE_PREFIX`, `ECS_TASK_FAMILY_PREFIX`, `PROJECT_NAME`, etc.
+
+**Obtener claves para CI desde CloudShell** (usuario con permisos IAM):
+
+```bash
+# Opción 1: crear access key para usuario IAM (consola IAM → Users → Security credentials)
+# Opción 2: si ya tienes un perfil, exportar credenciales actuales (válidas ~1h si son de rol):
+aws configure export-credentials --format env
+# Copia AWS_ACCESS_KEY_ID y AWS_SECRET_ACCESS_KEY a GitHub Secrets (no las subas al repo).
+```
+
+**No** pegues credenciales en código, `.env`, ni en el chat. Solo **GitHub Secrets**.
+
+**OIDC (producción):** en lugar de access keys, usa secret `AWS_ROLE_ARN` (ver trust policy en `infra/github-actions/`).
+
 Pipelines en `.github/workflows/`:
 
 | Workflow | Disparador | Acción |
@@ -55,7 +84,7 @@ Usuario IAM con las mismas capacidades ECR + ECS.
 
 | Variable | Ejemplo | Uso |
 |----------|---------|-----|
-| `AWS_REGION` | `us-east-1` | Región |
+| `AWS_REGION` | `us-east-2` | Región (tu despliegue actual) |
 | `PROJECT_NAME` | `kl-ecommerce` | Prefijo ECR: `kl-ecommerce/auth-service` |
 | `ENVIRONMENT` | `dev` | Etiquetado / convención |
 | `ECS_CLUSTER` | `kl-ecommerce-dev-cluster` | Cluster ECS (output Terraform) |

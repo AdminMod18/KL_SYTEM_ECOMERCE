@@ -1,4 +1,4 @@
-# CD: build → ECR → ECS Fargate (solo rama main o manual).
+# CD: build → ECR → ECS Fargate (rama main / manual). Trunk-based: solo main despliega.
 name: Deploy Backend AWS
 
 on:
@@ -24,29 +24,20 @@ permissions:
   contents: read
 
 env:
-  AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
-  PROJECT_NAME: ${{ vars.PROJECT_NAME || 'kl-ecommerce' }}
-  ENVIRONMENT: ${{ vars.ENVIRONMENT || 'dev' }}
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  PROJECT_NAME: ${{ vars.PROJECT_NAME }}
 
 jobs:
   changes:
     runs-on: ubuntu-latest
     outputs:
-      auth-service: ${{ steps.filter.outputs.auth-service }}
-      user-service: ${{ steps.filter.outputs.user-service }}
-      solicitud-service: ${{ steps.filter.outputs.solicitud-service }}
-      validation-service: ${{ steps.filter.outputs.validation-service }}
-      payment-service: ${{ steps.filter.outputs.payment-service }}
-      order-service: ${{ steps.filter.outputs.order-service }}
-      product-service: ${{ steps.filter.outputs.product-service }}
-      notification-service: ${{ steps.filter.outputs.notification-service }}
-      analytics-service: ${{ steps.filter.outputs.analytics-service }}
-      admin-service: ${{ steps.filter.outputs.admin-service }}
-      config-service: ${{ steps.filter.outputs.config-service }}
+      services: ${{ steps.build-list.outputs.services }}
     steps:
       - uses: actions/checkout@v4
+
       - uses: dorny/paths-filter@v3
         id: filter
+        if: github.event_name != 'workflow_dispatch' || github.event.inputs.deploy_all != 'true'
         with:
           filters: |
             auth-service:
@@ -72,40 +63,54 @@ jobs:
             config-service:
               - 'config-service/**'
 
+      - name: Armar lista de microservicios a desplegar
+        id: build-list
+        env:
+          F_AUTH: ${{ steps.filter.outputs.auth-service }}
+          F_USER: ${{ steps.filter.outputs.user-service }}
+          F_SOL: ${{ steps.filter.outputs.solicitud-service }}
+          F_VAL: ${{ steps.filter.outputs.validation-service }}
+          F_PAY: ${{ steps.filter.outputs.payment-service }}
+          F_ORD: ${{ steps.filter.outputs.order-service }}
+          F_PRO: ${{ steps.filter.outputs.product-service }}
+          F_NOT: ${{ steps.filter.outputs.notification-service }}
+          F_ANA: ${{ steps.filter.outputs.analytics-service }}
+          F_ADM: ${{ steps.filter.outputs.admin-service }}
+          F_CFG: ${{ steps.filter.outputs.config-service }}
+        run: |
+          ALL='["auth-service","user-service","solicitud-service","validation-service","payment-service","order-service","product-service","notification-service","analytics-service","admin-service","config-service"]'
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.deploy_all }}" = "true" ]; then
+            echo "services=${ALL}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          LIST=()
+          [ "$F_AUTH" = "true" ] && LIST+=("auth-service")
+          [ "$F_USER" = "true" ] && LIST+=("user-service")
+          [ "$F_SOL" = "true" ] && LIST+=("solicitud-service")
+          [ "$F_VAL" = "true" ] && LIST+=("validation-service")
+          [ "$F_PAY" = "true" ] && LIST+=("payment-service")
+          [ "$F_ORD" = "true" ] && LIST+=("order-service")
+          [ "$F_PRO" = "true" ] && LIST+=("product-service")
+          [ "$F_NOT" = "true" ] && LIST+=("notification-service")
+          [ "$F_ANA" = "true" ] && LIST+=("analytics-service")
+          [ "$F_ADM" = "true" ] && LIST+=("admin-service")
+          [ "$F_CFG" = "true" ] && LIST+=("config-service")
+          if [ ${#LIST[@]} -eq 0 ]; then
+            echo "services=[]" >> "$GITHUB_OUTPUT"
+          else
+            JSON=$(printf '%s\n' "${LIST[@]}" | jq -R . | jq -s -c .)
+            echo "services=${JSON}" >> "$GITHUB_OUTPUT"
+          fi
+
   deploy:
     needs: changes
+    if: needs.changes.outputs.services != '[]'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       max-parallel: 4
       matrix:
-        include:
-          - service: auth-service
-            filter: ${{ needs.changes.outputs.auth-service }}
-          - service: user-service
-            filter: ${{ needs.changes.outputs.user-service }}
-          - service: solicitud-service
-            filter: ${{ needs.changes.outputs.solicitud-service }}
-          - service: validation-service
-            filter: ${{ needs.changes.outputs.validation-service }}
-          - service: payment-service
-            filter: ${{ needs.changes.outputs.payment-service }}
-          - service: order-service
-            filter: ${{ needs.changes.outputs.order-service }}
-          - service: product-service
-            filter: ${{ needs.changes.outputs.product-service }}
-          - service: notification-service
-            filter: ${{ needs.changes.outputs.notification-service }}
-          - service: analytics-service
-            filter: ${{ needs.changes.outputs.analytics-service }}
-          - service: admin-service
-            filter: ${{ needs.changes.outputs.admin-service }}
-          - service: config-service
-            filter: ${{ needs.changes.outputs.config-service }}
-    # Solo servicios modificados, salvo workflow_dispatch con deploy_all=true
-    if: |
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_all == 'true') ||
-      matrix.filter == 'true'
+        service: ${{ fromJSON(needs.changes.outputs.services) }}
     env:
       SERVICE: ${{ matrix.service }}
       ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY_PREFIX || vars.PROJECT_NAME || 'kl-ecommerce' }}/${{ matrix.service }}
@@ -119,11 +124,11 @@ jobs:
       - name: Validar configuración AWS/ECS
         run: |
           if [ -z "${{ vars.ECS_CLUSTER }}" ]; then
-            echo "::error::Configura la variable de repositorio ECS_CLUSTER (nombre del cluster ECS)."
+            echo "::error::Configura la variable de repositorio ECS_CLUSTER."
             exit 1
           fi
           if [ -z "${{ secrets.AWS_ROLE_ARN }}" ] && { [ -z "${{ secrets.AWS_ACCESS_KEY_ID }}" ] || [ -z "${{ secrets.AWS_SECRET_ACCESS_KEY }}" ]; }; then
-            echo "::error::Configura AWS_ROLE_ARN (OIDC recomendado) o AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY."
+            echo "::error::Configura secrets AWS_ROLE_ARN (OIDC) o AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY en Settings → Secrets."
             exit 1
           fi
 
@@ -133,7 +138,7 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+          aws-region: ${{ vars.AWS_REGION || 'us-east-2' }}
 
       - name: Login a Amazon ECR
         id: ecr-login
@@ -189,12 +194,12 @@ jobs:
       - name: Forzar nuevo despliegue (si no hay task definition en ECS)
         if: steps.task-def.outcome != 'success'
         run: |
-          echo "No se encontró task family ${ECS_TASK_FAMILY}; forzando rolling update con imagen :latest en ECR."
+          echo "No se encontró task family ${ECS_TASK_FAMILY}; forzando rolling update."
           aws ecs update-service \
             --cluster "${ECS_CLUSTER}" \
             --service "${ECS_SERVICE}" \
             --force-new-deployment \
-            --region "${AWS_REGION}"
+            --region "${{ vars.AWS_REGION || 'us-east-2' }}"
 
       - name: Resumen despliegue
         run: |
