@@ -131,19 +131,21 @@ jobs:
         service: ${{ fromJSON(needs.changes.outputs.services) }}
     env:
       SERVICE: ${{ matrix.service }}
-      ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
-      ECS_SERVICE: ${{ vars.ECS_SERVICE_PREFIX }}-${{ matrix.service }}
-      ECS_TASK_FAMILY: ${{ vars.ECS_TASK_FAMILY_PREFIX }}-${{ matrix.service }}
-      ECS_CONTAINER_NAME: ${{ matrix.service }}
     steps:
       - uses: actions/checkout@v4
 
+      - name: Resolver nombres ECS (alineado a Terraform prod)
+        run: |
+          PREFIX="${{ vars.ECS_SERVICE_PREFIX || 'kl-ecommerce-prod' }}"
+          SUFFIX="${{ vars.ECS_SERVICE_SUFFIX || '-svc' }}"
+          SVC="${{ matrix.service }}"
+          echo "ECS_CLUSTER=${{ vars.ECS_CLUSTER || 'kl-ecommerce-prod-cluster' }}" >> "$GITHUB_ENV"
+          echo "ECS_SERVICE=${PREFIX}-${SVC}${SUFFIX}" >> "$GITHUB_ENV"
+          echo "ECS_TASK_FAMILY=${PREFIX}-${SVC}" >> "$GITHUB_ENV"
+          echo "Nombres ECS: cluster=${{ vars.ECS_CLUSTER || 'kl-ecommerce-prod-cluster' }} service=${PREFIX}-${SVC}${SUFFIX} task=${PREFIX}-${SVC}"
+
       - name: Validar configuración AWS/ECS
         run: |
-          if [ -z "${{ vars.ECS_CLUSTER }}" ]; then
-            echo "::error::Configura la variable de repositorio ECS_CLUSTER."
-            exit 1
-          fi
           if [ -z "${{ secrets.AWS_ROLE_ARN }}" ] && { [ -z "${{ secrets.AWS_ACCESS_KEY_ID }}" ] || [ -z "${{ secrets.AWS_SECRET_ACCESS_KEY }}" ]; }; then
             echo "::error::Configura secrets AWS_ROLE_ARN (OIDC) o AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY en Settings → Secrets."
             exit 1
@@ -165,7 +167,7 @@ jobs:
         id: ecr-repo
         env:
           REGION: ${{ vars.AWS_REGION || 'us-east-2' }}
-          PREFIX: ${{ vars.ECR_REPOSITORY_PREFIX || vars.PROJECT_NAME || 'kl-ecommerce' }}
+          PREFIX: ${{ vars.ECR_REPOSITORY_PREFIX || vars.PROJECT_NAME || 'kl-ecommerce-prod' }}
           ECR_NAMING: ${{ vars.ECR_NAMING || 'auto' }}
         run: |
           set -euo pipefail
@@ -192,8 +194,8 @@ jobs:
           elif [ "$ECR_NAMING" = "namespaced" ]; then
             CANDIDATES=("${PREFIX}/${SERVICE}")
           else
-            # auto: orden habitual en Terraform (nombre simple) y variantes del pipeline
-            CANDIDATES=("$SERVICE" "${PREFIX}-${SERVICE}" "${PREFIX}/${SERVICE}")
+            # auto: Terraform prod suele usar kl-ecommerce-prod-{service} o solo {service}
+            CANDIDATES=("${PREFIX}-${SERVICE}" "$SERVICE" "${PREFIX}/${SERVICE}" "kl-ecommerce/${SERVICE}")
           fi
 
           REPO=""
@@ -241,6 +243,9 @@ jobs:
           with open('task-definition.json','w') as f:
               json.dump(td, f)
           "
+          CONTAINER=$(python3 -c "import json; print(json.load(open('task-definition.json'))['containerDefinitions'][0]['name'])")
+          echo "ECS_CONTAINER_NAME=${CONTAINER}" >> "$GITHUB_ENV"
+          echo "Contenedor en task definition: ${CONTAINER}"
 
       - name: Renderizar task definition con nueva imagen
         if: steps.task-def.outcome == 'success'

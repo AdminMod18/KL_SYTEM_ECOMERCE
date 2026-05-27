@@ -87,9 +87,20 @@ Usuario IAM con las mismas capacidades ECR + ECS.
 | `AWS_REGION` | `us-east-2` | Región (tu despliegue actual) |
 | `PROJECT_NAME` | `kl-ecommerce` | Prefijo ECR: `kl-ecommerce/auth-service` |
 | `ENVIRONMENT` | `dev` | Etiquetado / convención |
-| `ECS_CLUSTER` | `kl-ecommerce-dev-cluster` | Cluster ECS (output Terraform) |
-| `ECS_SERVICE_PREFIX` | `kl-ecommerce-dev` | Servicio ECS = `{prefix}-auth-service` |
-| `ECS_TASK_FAMILY_PREFIX` | `kl-ecommerce-dev` | Task family = `{prefix}-auth-service` |
+| `ECS_CLUSTER` | `kl-ecommerce-prod-cluster` | Cluster ECS |
+| `ECS_SERVICE_PREFIX` | `kl-ecommerce-prod` | Servicio ECS = `{prefix}-auth-service-svc` |
+| `ECS_SERVICE_SUFFIX` | `-svc` | Sufijo del servicio en ECS (Terraform) |
+| `ECS_TASK_FAMILY_PREFIX` | *(opcional)* | Task family = `{prefix}-auth-service` (sin `-svc`) |
+
+**Convención en tu cuenta (prod):**
+
+| Micro | Servicio ECS | Task definition |
+|-------|----------------|-----------------|
+| auth-service | `kl-ecommerce-prod-auth-service-svc` | `kl-ecommerce-prod-auth-service` |
+| user-service | `kl-ecommerce-prod-user-service-svc` | `kl-ecommerce-prod-user-service` |
+| … | `kl-ecommerce-prod-{micro}-svc` | `kl-ecommerce-prod-{micro}` |
+
+Si no defines variables, el workflow usa estos valores por defecto.
 | `ECS_WAIT_STABILITY` | `false` | `true` espera estabilidad (más lento) |
 
 Alinea nombres con los outputs de tu Terraform (`modules/ecs`).
