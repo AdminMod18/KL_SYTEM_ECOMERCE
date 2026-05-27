@@ -1,0 +1,154 @@
+# CI: compilación y tests Gradle por microservicio (PR y push a main).
+name: CI Backend
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+
+concurrency:
+  group: ci-backend-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      auth-service: ${{ steps.filter.outputs.auth-service }}
+      user-service: ${{ steps.filter.outputs.user-service }}
+      solicitud-service: ${{ steps.filter.outputs.solicitud-service }}
+      validation-service: ${{ steps.filter.outputs.validation-service }}
+      payment-service: ${{ steps.filter.outputs.payment-service }}
+      order-service: ${{ steps.filter.outputs.order-service }}
+      product-service: ${{ steps.filter.outputs.product-service }}
+      notification-service: ${{ steps.filter.outputs.notification-service }}
+      analytics-service: ${{ steps.filter.outputs.analytics-service }}
+      admin-service: ${{ steps.filter.outputs.admin-service }}
+      config-service: ${{ steps.filter.outputs.config-service }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            auth-service:
+              - 'auth-service/**'
+            user-service:
+              - 'user-service/**'
+            solicitud-service:
+              - 'solicitud-service/**'
+            validation-service:
+              - 'validation-service/**'
+            payment-service:
+              - 'payment-service/**'
+            order-service:
+              - 'order-service/**'
+            product-service:
+              - 'product-service/**'
+            notification-service:
+              - 'notification-service/**'
+            analytics-service:
+              - 'analytics-service/**'
+            admin-service:
+              - 'admin-service/**'
+            config-service:
+              - 'config-service/**'
+
+  test:
+    needs: changes
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: auth-service
+            filter: ${{ needs.changes.outputs.auth-service }}
+          - service: user-service
+            filter: ${{ needs.changes.outputs.user-service }}
+          - service: solicitud-service
+            filter: ${{ needs.changes.outputs.solicitud-service }}
+          - service: validation-service
+            filter: ${{ needs.changes.outputs.validation-service }}
+          - service: payment-service
+            filter: ${{ needs.changes.outputs.payment-service }}
+          - service: order-service
+            filter: ${{ needs.changes.outputs.order-service }}
+          - service: product-service
+            filter: ${{ needs.changes.outputs.product-service }}
+          - service: notification-service
+            filter: ${{ needs.changes.outputs.notification-service }}
+          - service: analytics-service
+            filter: ${{ needs.changes.outputs.analytics-service }}
+          - service: admin-service
+            filter: ${{ needs.changes.outputs.admin-service }}
+          - service: config-service
+            filter: ${{ needs.changes.outputs.config-service }}
+    if: matrix.filter == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Gradle test (${{ matrix.service }})
+        working-directory: ${{ matrix.service }}
+        run: |
+          chmod +x gradlew 2>/dev/null || true
+          if [ -f ./gradlew ]; then
+            ./gradlew test --no-daemon
+          else
+            gradle test --no-daemon
+          fi
+
+      - name: Gradle build sin tests (${{ matrix.service }})
+        working-directory: ${{ matrix.service }}
+        run: |
+          if [ -f ./gradlew ]; then
+            ./gradlew build -x test --no-daemon
+          else
+            gradle build -x test --no-daemon
+          fi
+
+  docker-build-smoke:
+    needs: changes
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: auth-service
+            filter: ${{ needs.changes.outputs.auth-service }}
+          - service: user-service
+            filter: ${{ needs.changes.outputs.user-service }}
+          - service: solicitud-service
+            filter: ${{ needs.changes.outputs.solicitud-service }}
+          - service: validation-service
+            filter: ${{ needs.changes.outputs.validation-service }}
+          - service: payment-service
+            filter: ${{ needs.changes.outputs.payment-service }}
+          - service: order-service
+            filter: ${{ needs.changes.outputs.order-service }}
+          - service: product-service
+            filter: ${{ needs.changes.outputs.product-service }}
+          - service: notification-service
+            filter: ${{ needs.changes.outputs.notification-service }}
+          - service: analytics-service
+            filter: ${{ needs.changes.outputs.analytics-service }}
+          - service: admin-service
+            filter: ${{ needs.changes.outputs.admin-service }}
+          - service: config-service
+            filter: ${{ needs.changes.outputs.config-service }}
+    if: matrix.filter == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image (${{ matrix.service }})
+        run: docker build -t ${{ matrix.service }}:ci-${{ github.sha }} ./${{ matrix.service }}

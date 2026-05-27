@@ -1,0 +1,15 @@
+{
+  "services": [
+    { "name": "auth-service", "port": 9001, "context": "auth-service" },
+    { "name": "user-service", "port": 9002, "context": "user-service" },
+    { "name": "solicitud-service", "port": 9003, "context": "solicitud-service" },
+    { "name": "validation-service", "port": 9004, "context": "validation-service" },
+    { "name": "payment-service", "port": 9005, "context": "payment-service" },
+    { "name": "order-service", "port": 9006, "context": "order-service" },
+    { "name": "product-service", "port": 9007, "context": "product-service" },
+    { "name": "notification-service", "port": 9008, "context": "notification-service" },
+    { "name": "analytics-service", "port": 9009, "context": "analytics-service" },
+    { "name": "admin-service", "port": 9010, "context": "admin-service" },
+    { "name": "config-service", "port": 8888, "context": "config-service" }
+  ]
+}
