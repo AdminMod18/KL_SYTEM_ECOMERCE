@@ -113,7 +113,6 @@ jobs:
         service: ${{ fromJSON(needs.changes.outputs.services) }}
     env:
       SERVICE: ${{ matrix.service }}
-      ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY_PREFIX || vars.PROJECT_NAME || 'kl-ecommerce' }}/${{ matrix.service }}
       ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
       ECS_SERVICE: ${{ vars.ECS_SERVICE_PREFIX }}-${{ matrix.service }}
       ECS_TASK_FAMILY: ${{ vars.ECS_TASK_FAMILY_PREFIX }}-${{ matrix.service }}
@@ -144,12 +143,64 @@ jobs:
         id: ecr-login
         uses: aws-actions/amazon-ecr-login@v2
 
+      - name: Resolver o crear repositorio ECR
+        id: ecr-repo
+        env:
+          REGION: ${{ vars.AWS_REGION || 'us-east-2' }}
+          PREFIX: ${{ vars.ECR_REPOSITORY_PREFIX || vars.PROJECT_NAME || 'kl-ecommerce' }}
+          ECR_NAMING: ${{ vars.ECR_NAMING || 'auto' }}
+        run: |
+          set -euo pipefail
+          SERVICE="${{ matrix.service }}"
+
+          repo_exists() {
+            aws ecr describe-repositories --repository-names "$1" --region "$REGION" >/dev/null 2>&1
+          }
+
+          create_repo() {
+            echo "Creando repositorio ECR: $1" >&2
+            aws ecr create-repository \
+              --repository-name "$1" \
+              --region "$REGION" \
+              --image-scanning-configuration scanOnPush=true \
+              --encryption-configuration encryptionType=AES256 >/dev/null
+            echo "$1"
+          }
+
+          if [ "$ECR_NAMING" = "service-only" ]; then
+            CANDIDATES=("$SERVICE")
+          elif [ "$ECR_NAMING" = "flat" ]; then
+            CANDIDATES=("${PREFIX}-${SERVICE}")
+          elif [ "$ECR_NAMING" = "namespaced" ]; then
+            CANDIDATES=("${PREFIX}/${SERVICE}")
+          else
+            # auto: orden habitual en Terraform (nombre simple) y variantes del pipeline
+            CANDIDATES=("$SERVICE" "${PREFIX}-${SERVICE}" "${PREFIX}/${SERVICE}")
+          fi
+
+          REPO=""
+          for c in "${CANDIDATES[@]}"; do
+            if repo_exists "$c"; then
+              REPO="$c"
+              echo "Repositorio ECR existente: $REPO" >&2
+              break
+            fi
+          done
+
+          if [ -z "$REPO" ]; then
+            REPO=$(create_repo "${CANDIDATES[0]}")
+          fi
+
+          echo "repository=${REPO}" >> "$GITHUB_OUTPUT"
+          echo "ECR_REPOSITORY=${REPO}" >> "$GITHUB_ENV"
+
       - name: Build y push imagen Docker
         env:
           REGISTRY: ${{ steps.ecr-login.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
           IMAGE_URI="${REGISTRY}/${ECR_REPOSITORY}"
+          echo "Push a ${IMAGE_URI}"
           docker build -t "${IMAGE_URI}:${IMAGE_TAG}" -t "${IMAGE_URI}:latest" "./${SERVICE}"
           docker push "${IMAGE_URI}:${IMAGE_TAG}"
           docker push "${IMAGE_URI}:latest"
@@ -204,6 +255,7 @@ jobs:
       - name: Resumen despliegue
         run: |
           echo "### ${{ matrix.service }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- ECR repo: \`${ECR_REPOSITORY}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- Imagen: \`${IMAGE_URI}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- ECS cluster: \`${ECS_CLUSTER}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- ECS service: \`${ECS_SERVICE}\`" >> "$GITHUB_STEP_SUMMARY"

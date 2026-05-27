@@ -96,13 +96,22 @@ Alinea nombres con los outputs de tu Terraform (`modules/ecs`).
 
 ## ECR
 
-Por cada microservicio debe existir el repositorio (Terraform `modules/ecr`):
+El push falla con `name unknown` cuando el **nombre del repositorio en ECR no coincide** con el del pipeline.
 
-- `kl-ecommerce/auth-service`
-- `kl-ecommerce/user-service`
-- … (11 repos)
+Variable **`ECR_NAMING`** (opcional):
 
-El pipeline etiqueta imágenes con `latest` y el SHA del commit (`github.sha`).
+| Valor | Ejemplo para `analytics-service` |
+|-------|----------------------------------|
+| `auto` (default) | Busca en orden: `analytics-service`, `kl-ecommerce-analytics-service`, `kl-ecommerce/analytics-service`; si ninguno existe, **crea el primero**. |
+| `service-only` | `analytics-service` (como en muchos módulos Terraform) |
+| `flat` | `kl-ecommerce-analytics-service` |
+| `namespaced` | `kl-ecommerce/analytics-service` |
+
+En consola AWS: **ECR → Repositories** y copia el nombre exacto. Si usas Terraform con nombres simples (`auth-service`, `user-service`, …), deja `ECR_NAMING=service-only` o `auto`.
+
+El pipeline puede **crear** el repo si no existe (requiere permiso `ecr:CreateRepository` en el usuario/rol de CI).
+
+Imágenes: etiquetas `latest` y `<sha-del-commit>`.
 
 ## ECS
 
