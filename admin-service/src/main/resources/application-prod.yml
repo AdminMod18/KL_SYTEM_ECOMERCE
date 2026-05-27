@@ -14,3 +14,16 @@ spring:
   h2:
     console:
       enabled: false
+
+# ALB/ECS esperan GET /admin/actuator/health (Terraform prod).
+management:
+  endpoints:
+    web:
+      base-path: /admin/actuator
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
