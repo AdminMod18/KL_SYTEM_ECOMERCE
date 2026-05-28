@@ -3,9 +3,15 @@ package com.marketplace.order.service;
 import com.marketplace.order.command.ComandoColocarOrden;
 import com.marketplace.order.command.ComandoOrden;
 import com.marketplace.order.command.InvocadorComandosOrden;
+import com.marketplace.order.domain.BorradorOrden;
+import com.marketplace.order.dto.DesglosePrecioOrden;
+import com.marketplace.order.dto.LineaOrdenRequest;
 import com.marketplace.order.dto.OrdenCreateRequest;
+import com.marketplace.order.dto.OrdenLineaListItemResponse;
 import com.marketplace.order.dto.OrdenListItemResponse;
 import com.marketplace.order.dto.OrdenResponse;
+import com.marketplace.order.entity.Orden;
+import com.marketplace.order.entity.OrdenLinea;
 import com.marketplace.order.pricing.CalculadoraDesglosePrecioOrden;
 import com.marketplace.order.repository.OrdenRepository;
 import org.slf4j.Logger;
@@ -13,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -58,14 +65,48 @@ public class OrdenApplicationService {
     public List<OrdenListItemResponse> listarPorCliente(String clienteId) {
         String cid = clienteId == null ? "" : clienteId.trim();
         return ordenRepository.findByClienteIdOrderByCreadoEnDesc(cid).stream()
-                .map(o -> new OrdenListItemResponse(
-                        o.getId(),
-                        o.getClienteId(),
-                        o.getTotal(),
-                        tipoEntregaMostrado(o.getTipoEntrega()),
-                        o.getCreadoEn(),
-                        o.getLineas() == null ? 0 : o.getLineas().size()))
+                .map(this::aListItem)
                 .toList();
+    }
+
+    private OrdenListItemResponse aListItem(Orden o) {
+        List<OrdenLinea> lineasEntidad = o.getLineas() == null ? List.of() : o.getLineas();
+        BorradorOrden borrador = borradorDesde(o, lineasEntidad);
+        DesglosePrecioOrden desglose = calculadoraDesglosePrecioOrden.desglose(borrador);
+        List<OrdenLineaListItemResponse> lineas = lineasEntidad.stream().map(this::aLineaListItem).toList();
+        return new OrdenListItemResponse(
+                o.getId(),
+                o.getClienteId(),
+                o.getTotal(),
+                desglose.subtotalBase(),
+                desglose.montoIva(),
+                desglose.montoComision(),
+                desglose.montoEnvio(),
+                tipoEntregaMostrado(o.getTipoEntrega()),
+                "CREADA",
+                o.getCreadoEn(),
+                lineas.size(),
+                lineas);
+    }
+
+    private OrdenLineaListItemResponse aLineaListItem(OrdenLinea linea) {
+        BigDecimal subtotal =
+                linea.getPrecioUnitario().multiply(BigDecimal.valueOf(linea.getCantidad()));
+        return new OrdenLineaListItemResponse(
+                linea.getSku(), linea.getCantidad(), linea.getPrecioUnitario(), subtotal);
+    }
+
+    private static BorradorOrden borradorDesde(Orden o, List<OrdenLinea> lineasEntidad) {
+        List<LineaOrdenRequest> lineas = lineasEntidad.stream()
+                .map(l -> {
+                    LineaOrdenRequest req = new LineaOrdenRequest();
+                    req.setSku(l.getSku());
+                    req.setCantidad(l.getCantidad());
+                    req.setPrecioUnitario(l.getPrecioUnitario());
+                    return req;
+                })
+                .toList();
+        return new BorradorOrden(lineas, o.getPaisEnvio(), o.getCiudadEnvio(), o.getDireccionEnvio());
     }
 
     private static String tipoEntregaMostrado(String raw) {

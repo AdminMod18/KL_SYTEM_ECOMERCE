@@ -84,7 +84,11 @@ class OrdenControllerIntegrationTest {
         mockMvc.perform(get("/ordenes").param("clienteId", "cli-historial"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].clienteId").value("cli-historial"));
+                .andExpect(jsonPath("$[0].clienteId").value("cli-historial"))
+                .andExpect(jsonPath("$[0].lineas", hasSize(1)))
+                .andExpect(jsonPath("$[0].lineas[0].sku").value("SKU-H"))
+                .andExpect(jsonPath("$[0].lineas[0].precioUnitario").value(5.0))
+                .andExpect(jsonPath("$[0].subtotalBase").value(5.0000));
 
         mockMvc.perform(get("/orden").param("clienteId", "cli-historial"))
                 .andExpect(status().isOk())
