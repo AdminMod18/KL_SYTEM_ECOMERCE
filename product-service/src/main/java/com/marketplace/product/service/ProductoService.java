@@ -5,6 +5,7 @@ import com.marketplace.product.category.CategoriaComposite;
 import com.marketplace.product.category.CategoriaLeaf;
 import com.marketplace.product.dto.ProductoCreateRequest;
 import com.marketplace.product.dto.ProductoResponse;
+import com.marketplace.product.dto.ProductoStockUpdateRequest;
 import com.marketplace.product.entity.Producto;
 import com.marketplace.product.integration.VendedorActivoPort;
 import com.marketplace.product.repository.ProductoRepository;
@@ -69,10 +70,31 @@ public class ProductoService {
     }
 
     @Transactional(readOnly = true)
-    public List<ProductoResponse> listar() {
-        List<ProductoResponse> lista = productoRepository.findAll().stream().map(this::toResponse).toList();
-        log.info("Listado de productos: {} item(s)", lista.size());
+    public List<ProductoResponse> listar(Long vendedorSolicitudId) {
+        List<ProductoResponse> lista;
+        if (vendedorSolicitudId != null) {
+            lista = productoRepository.findByVendedorSolicitudIdOrderByCreadoEnDesc(vendedorSolicitudId).stream()
+                    .map(this::toResponse)
+                    .toList();
+            log.info("Listado de productos vendedorSolicitudId={}: {} item(s)", vendedorSolicitudId, lista.size());
+        } else {
+            lista = productoRepository.findAll().stream().map(this::toResponse).toList();
+            log.info("Listado de productos: {} item(s)", lista.size());
+        }
         return lista;
+    }
+
+    @Transactional
+    public ProductoResponse actualizarStock(Long productoId, ProductoStockUpdateRequest request) {
+        Producto producto =
+                productoRepository.findById(productoId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Producto no encontrado."));
+        if (producto.getVendedorSolicitudId() == null
+                || !producto.getVendedorSolicitudId().equals(request.getVendedorSolicitudId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "El producto no pertenece a esta solicitud de vendedor.");
+        }
+        vendedorActivoPort.assertVendedorEnEstadoActiva(request.getVendedorSolicitudId());
+        producto.setCantidadStock(request.getCantidadStock());
+        return toResponse(productoRepository.save(producto));
     }
 
     private String construirRutaCategoria(List<String> categorias) {

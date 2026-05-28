@@ -21,6 +21,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doNothing;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -117,5 +118,41 @@ class ProductoControllerIntegrationTest {
                         .content(objectMapper.writeValueAsString(body)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.imagenesUrls").exists());
+    }
+
+    @Test
+    @Order(4)
+    void listarPorVendedor_yActualizarStock() throws Exception {
+        String json = """
+                {
+                  "vendedorSolicitudId": 400,
+                  "nombre": "Stock Demo",
+                  "precio": 99.99,
+                  "descripcion": "Inventario",
+                  "categorias": ["Tecnologia", "Accesorios"],
+                  "cantidadStock": 3
+                }
+                """;
+        String body =
+                mockMvc.perform(post("/productos").contentType(MediaType.APPLICATION_JSON).content(json))
+                        .andExpect(status().isCreated())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+        long productoId = objectMapper.readTree(body).get("id").asLong();
+
+        mockMvc.perform(get("/productos").param("vendedorSolicitudId", "400"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].cantidadStock").value(3));
+
+        String patch = """
+                {"vendedorSolicitudId":400,"cantidadStock":15}
+                """;
+        mockMvc.perform(patch("/productos/" + productoId + "/stock")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(patch))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.cantidadStock").value(15));
     }
 }

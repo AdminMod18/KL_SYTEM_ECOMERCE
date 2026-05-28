@@ -17,14 +17,18 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.marketplace.product.dto.ProductoStockUpdateRequest;
 
 import java.util.List;
 
@@ -61,13 +65,31 @@ public class ProductoController {
         return productoService.crear(request);
     }
 
-    @Operation(summary = "Listar productos")
+    @Operation(
+            summary = "Listar productos",
+            description = "Catálogo completo o filtrado por vendedorSolicitudId para el panel de inventario.")
     @ApiResponses({@ApiResponse(responseCode = "200", description = "Catálogo")})
     @GetMapping("/productos")
     public List<ProductoResponse> listar(
             @Parameter(name = "X-Request-Id", description = "Identificador de correlación opcional", in = ParameterIn.HEADER, required = false)
-            @RequestHeader(value = "X-Request-Id", required = false) String requestId) {
-        return productoService.listar();
+            @RequestHeader(value = "X-Request-Id", required = false) String requestId,
+            @Parameter(description = "Filtra productos del vendedor (solicitud ACTIVA)")
+            @RequestParam(value = "vendedorSolicitudId", required = false)
+                    Long vendedorSolicitudId) {
+        return productoService.listar(vendedorSolicitudId);
+    }
+
+    @Operation(summary = "Actualizar stock de un producto")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Stock actualizado"),
+            @ApiResponse(responseCode = "403", description = "Producto de otro vendedor", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Producto no encontrado", content = @Content)
+    })
+    @PatchMapping("/productos/{productoId}/stock")
+    public ProductoResponse actualizarStock(
+            @Parameter(description = "Id del producto", required = true) @PathVariable Long productoId,
+            @Valid @RequestBody ProductoStockUpdateRequest body) {
+        return productoService.actualizarStock(productoId, body);
     }
 
     @Operation(summary = "Listar interacciones del producto")
