@@ -1,5 +1,7 @@
 package com.marketplace.analytics.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.math.BigDecimal;
 import java.time.Instant;
 
@@ -19,4 +21,49 @@ public record KpiResponse(
         Instant ultimoEventoEn,
         String tendenciasMarketingResumen
 ) {
+
+    @JsonProperty("totalEvents")
+    public long totalEvents() {
+        return totalEventos;
+    }
+
+    @JsonProperty("purchases")
+    public long purchases() {
+        return comprasRegistradas;
+    }
+
+    @JsonProperty("totalRevenue")
+    public BigDecimal totalRevenue() {
+        return ingresosComprasAcumulados;
+    }
+
+    @JsonProperty("approvedRequests")
+    public long approvedRequests() {
+        return solicitudesAprobadasRegistradas;
+    }
+
+    @JsonProperty("catalogViews")
+    public long catalogViews() {
+        return consultasCatalogoRegistradas;
+    }
+
+    @JsonProperty("topPurchaseSku")
+    public String topPurchaseSku() {
+        return skuCompraMasFrecuente;
+    }
+
+    @JsonProperty("topCatalogQuery")
+    public String topCatalogQuery() {
+        return textoConsultaMasFrecuente;
+    }
+
+    @JsonProperty("lastEventAt")
+    public Instant lastEventAt() {
+        return ultimoEventoEn;
+    }
+
+    @JsonProperty("marketingSummary")
+    public String marketingSummary() {
+        return tendenciasMarketingResumen;
+    }
 }

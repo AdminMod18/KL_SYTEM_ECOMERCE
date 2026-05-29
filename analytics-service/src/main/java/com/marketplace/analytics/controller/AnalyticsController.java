@@ -42,7 +42,7 @@ public class AnalyticsController {
             @ApiResponse(responseCode = "201", description = "Evento almacenado"),
             @ApiResponse(responseCode = "400", description = "Validación fallida", content = @Content)
     })
-    @PostMapping("/eventos")
+    @PostMapping({"/eventos", "/analytics/eventos", "/api/eventos", "/api/analytics/eventos"})
     @ResponseStatus(HttpStatus.CREATED)
     public EventoMetricaResponse registrar(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Tipo y magnitud del evento", required = true)
@@ -52,7 +52,7 @@ public class AnalyticsController {
 
     @Operation(summary = "Consultar KPIs agregados")
     @ApiResponses({@ApiResponse(responseCode = "200", description = "Indicadores actuales")})
-    @GetMapping("/kpis")
+    @GetMapping({"/kpis", "/analytics/kpis", "/api/kpis", "/api/analytics/kpis"})
     public KpiResponse kpis(
             @Parameter(name = "X-Request-Id", description = "Identificador de correlación opcional", in = ParameterIn.HEADER, required = false)
             @RequestHeader(value = "X-Request-Id", required = false) String requestId) {

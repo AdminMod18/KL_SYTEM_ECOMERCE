@@ -1,5 +1,6 @@
 package com.marketplace.analytics.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.marketplace.analytics.model.TipoEventoMetrica;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
@@ -20,12 +21,15 @@ import java.math.BigDecimal;
 public class EventoMetricaRequest {
 
     @NotNull
+    @JsonAlias({"type"})
     private TipoEventoMetrica tipo;
 
     @NotBlank
     @Size(max = 120)
+    @JsonAlias({"reference", "sku", "id"})
     private String referencia;
 
     @DecimalMin(value = "0.0", inclusive = true)
+    @JsonAlias({"valor", "amount", "total", "revenue"})
     private BigDecimal valorMonetario;
 }
